@@ -44,8 +44,10 @@ pnpm start
    | Nome | Valor |
    | --- | --- |
    | `NEXT_PUBLIC_SITE_URL` | `https://SEU-PROJETO.vercel.app` |
+   | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto no Supabase |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon/public key do Supabase |
 
-   Ela é opcional para o build passar, mas sem ela as imagens de Open Graph (preview no WhatsApp, X, etc.) apontam para `localhost`.
+   As duas do Supabase são obrigatórias — sem elas o app abre pedindo configuração.
 5. Deploy.
 
 ### Observação sobre o pnpm
@@ -54,6 +56,37 @@ O campo `packageManager` foi removido do `package.json` de propósito. A Vercel 
 
 Se quiser fixar o pnpm 11, adicione a variável de ambiente `ENABLE_EXPERIMENTAL_COREPACK=1` no projeto da Vercel e devolva `"packageManager": "pnpm@11.19.0"` ao `package.json`.
 
-## Dados compartilhados
+## Banco de dados (Supabase)
 
-Os lançamentos ficam salvos no `localStorage` do navegador — cada dispositivo tem os seus. Para João e Sara verem os mesmos dados em aparelhos diferentes, conecte um banco compatível com a Vercel (Supabase/Postgres, por exemplo) e troque o armazenamento local por uma API autenticada. Enquanto isso, a exportação/importação em JSON serve como sincronização manual.
+Os lançamentos ficam num Postgres do Supabase, compartilhados entre João e Sara e protegidos por login.
+
+### Configuração, uma vez só
+
+1. Crie um projeto em [supabase.com](https://supabase.com).
+2. Abra o **SQL Editor**, cole o conteúdo de `supabase/schema.sql` e execute.
+3. Em **Authentication > Users > Add user**, crie uma conta para cada pessoa
+   (marque *Auto Confirm User*, senão o login não funciona sem e-mail configurado).
+4. Volte ao SQL Editor e rode o bloco comentado no fim do `schema.sql`, trocando
+   os dois e-mails pelos reais. Ele cria a "casa" e vincula as duas contas a ela.
+5. Em **Project Settings > Data API**, copie a *Project URL* e a *anon public key*
+   para as variáveis de ambiente da Vercel.
+
+### Como os dados são protegidos
+
+O `schema.sql` liga Row Level Security em todas as tabelas. Cada consulta só
+enxerga lançamentos da casa a que o usuário logado pertence. A `anon key` é
+pública por design (ela vai no JavaScript do navegador); é o RLS que impede que
+alguém com a chave leia os dados de outra pessoa.
+
+### Primeira carga
+
+Quando um perfil abre e o banco ainda não tem nenhum lançamento dele, o app
+insere automaticamente os dados iniciais que estão em `app/page.tsx`
+(`SAMPLE_ENTRIES` para o João, `SARA_ENTRIES` para a Sara). A partir daí o banco
+é a fonte da verdade e o código não é mais consultado.
+
+### Backup
+
+Os botões **Exportar** e **Importar** continuam funcionando. A importação agora
+*adiciona* lançamentos em vez de substituir, para não apagar o que já está no
+banco sem querer.

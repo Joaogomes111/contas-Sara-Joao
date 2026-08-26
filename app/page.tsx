@@ -1,6 +1,8 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { supabase, supabaseConfigured, rowToEntry, entryToRow, type EntryRow } from '@/lib/supabase';
 
 type Entry = {
   id: string;
@@ -61,8 +63,6 @@ const brl = (cents: number, compact = false) => new Intl.NumberFormat('pt-BR', {
 const sourceLabel: Record<Entry['source'], string> = {
   fixed: 'Fixo', card: 'Cartão', variable: 'Variável', income: 'Entrada',
 };
-
-const STORAGE_PREFIX = 'clara-financas-v1';
 
 const SAMPLE_ENTRIES: EntrySeed[] = [
   // Entradas
@@ -305,10 +305,6 @@ function makeId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function storageKey(profile: ProfileKey) {
-  return `${STORAGE_PREFIX}:${profile}`;
-}
-
 function createEntry(entry: EntrySeed, profile: ProfileKey): Entry {
   return {
     ...entry,
@@ -323,23 +319,25 @@ function seedEntries(profile: ProfileKey) {
   return seed.map((entry) => createEntry(entry, profile));
 }
 
-function readStoredEntries(profile: ProfileKey) {
-  try {
-    const raw = window.localStorage.getItem(storageKey(profile));
-    if (!raw) {
-      const seeded = seedEntries(profile);
-      window.localStorage.setItem(storageKey(profile), JSON.stringify(seeded));
-      return seeded;
-    }
-    const parsed = JSON.parse(raw) as Entry[];
-    return Array.isArray(parsed) ? parsed : seedEntries(profile);
-  } catch {
-    return seedEntries(profile);
-  }
+async function fetchEntries(profile: ProfileKey): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('profile', profile)
+    .order('transaction_date', { ascending: false });
+  if (error) throw error;
+  return (data as EntryRow[]).map(rowToEntry);
 }
 
-function writeStoredEntries(profile: ProfileKey, nextEntries: Entry[]) {
-  window.localStorage.setItem(storageKey(profile), JSON.stringify(nextEntries));
+// Na primeira vez que um perfil abre sem nenhum lançamento no banco,
+// carrega os dados iniciais. Depois disso o banco é a fonte da verdade.
+async function fetchOrSeedEntries(profile: ProfileKey): Promise<Entry[]> {
+  const existing = await fetchEntries(profile);
+  if (existing.length) return existing;
+  const seeded = seedEntries(profile);
+  const { error } = await supabase.from('entries').insert(seeded.map(entryToRow));
+  if (error) throw error;
+  return fetchEntries(profile);
 }
 
 function entryDay(entry: Entry, month: string) {
@@ -350,6 +348,8 @@ function entryDay(entry: Entry, month: string) {
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [activeProfile, setActiveProfile] = useState<ProfileKey>('joao');
   const [selectedMonth, setSelectedMonth] = useState('2026-08');
   const [chartMode, setChartMode] = useState<ChartMode>('weekly');
@@ -368,18 +368,13 @@ export default function Home() {
   const loadEntries = useCallback(async (profile: ProfileKey) => {
     setLoading(true);
     try {
-      setEntries(readStoredEntries(profile));
+      setEntries(await fetchOrSeedEntries(profile));
     } catch {
       setToast('Não foi possível carregar seus dados agora.');
     } finally {
       setLoading(false);
     }
   }, []);
-
-  const persistEntries = (nextEntries: Entry[], profile = activeProfile) => {
-    writeStoredEntries(profile, nextEntries);
-    setEntries(nextEntries);
-  };
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('perfil');
@@ -391,9 +386,26 @@ export default function Home() {
     return () => window.clearTimeout(timeout);
   }, []);
   useEffect(() => {
-    const timeout = window.setTimeout(() => { void loadEntries(activeProfile); }, 0);
+    if (!supabaseConfigured) {
+      const ready = window.setTimeout(() => setAuthReady(true), 0);
+      return () => window.clearTimeout(ready);
+    }
+    let alive = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!alive) return;
+      setSession(data.session);
+      setAuthReady(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => { alive = false; listener.subscription.unsubscribe(); };
+  }, []);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      if (!session) { setEntries([]); setLoading(false); return; }
+      void loadEntries(activeProfile);
+    }, 0);
     return () => window.clearTimeout(timeout);
-  }, [activeProfile, loadEntries]);
+  }, [activeProfile, loadEntries, session]);
   useEffect(() => {
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(''), 3000);
@@ -533,10 +545,11 @@ export default function Home() {
     if (makesBudgetWorse && !window.confirm(`Freio de gastos: este lançamento leva o mês a ${brl(projectedExpenses)}, ultrapassando a meta de ${profileSettings.name} em ${brl(Math.max(0, projectedExpenses - projectedLimit))}. Deseja registrar mesmo assim?`)) return;
     setSaving(true);
     try {
-      const nextEntries = editing
+      const { error } = await supabase.from('entries').upsert(entryToRow(payload));
+      if (error) throw error;
+      setEntries(editing
         ? entries.map((entry) => entry.id === editing.id ? payload : entry)
-        : [payload, ...entries];
-      persistEntries(nextEntries);
+        : [payload, ...entries]);
       setModalOpen(false);
       setToast(editing ? 'Lançamento atualizado.' : 'Lançamento adicionado.');
     } catch {
@@ -546,8 +559,9 @@ export default function Home() {
 
   const togglePaid = async (entry: Entry) => {
     try {
-      const nextEntries = entries.map((item) => item.id === entry.id ? { ...item, paid: !item.paid } : item);
-      persistEntries(nextEntries);
+      const { error } = await supabase.from('entries').update({ paid: !entry.paid }).eq('id', entry.id);
+      if (error) throw error;
+      setEntries(entries.map((item) => item.id === entry.id ? { ...item, paid: !item.paid } : item));
       setToast(entry.paid ? 'Marcado como pendente.' : 'Pagamento confirmado.');
     } catch {
       setToast('Não foi possível atualizar agora.');
@@ -557,8 +571,9 @@ export default function Home() {
   const deleteEntry = async () => {
     if (!editing || !window.confirm(`Excluir “${editing.description}”?`)) return;
     try {
-      const nextEntries = entries.filter((item) => item.id !== editing.id);
-      persistEntries(nextEntries);
+      const { error } = await supabase.from('entries').delete().eq('id', editing.id);
+      if (error) throw error;
+      setEntries(entries.filter((item) => item.id !== editing.id));
       setModalOpen(false);
       setToast('Lançamento excluído.');
     } catch {
@@ -584,15 +599,35 @@ export default function Home() {
       if (!Array.isArray(imported)) throw new Error();
       const entriesForProfile = imported.map((entry) => ({
         ...entry,
-        id: entry.id || makeId(),
+        id: makeId(),
         profile: activeProfile,
         billingMonth: entry.billingMonth || entry.transactionDate.slice(0, 7),
       }));
-      persistEntries(entriesForProfile);
-      setToast(`${entriesForProfile.length} lançamentos importados para ${profileSettings.name}.`);
+      const { error } = await supabase.from('entries').insert(entriesForProfile.map(entryToRow));
+      if (error) throw error;
+      await loadEntries(activeProfile);
+      setToast(`${entriesForProfile.length} lançamentos adicionados para ${profileSettings.name}.`);
     } catch { setToast('Arquivo inválido. Use uma cópia exportada pela Clara.'); }
     event.target.value = '';
   };
+
+  if (!supabaseConfigured) {
+    return (
+      <main className="app-shell auth-shell">
+        <div className="auth-card">
+          <span className="brand-mark">C</span>
+          <h1>Falta configurar o banco</h1>
+          <p>Defina <code>NEXT_PUBLIC_SUPABASE_URL</code> e <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> nas variáveis de ambiente e faça um novo deploy.</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!authReady) {
+    return <main className="app-shell auth-shell"><div className="auth-card"><p>Carregando…</p></div></main>;
+  }
+
+  if (!session) return <SignIn />;
 
   return (
     <main className="app-shell">
@@ -601,7 +636,7 @@ export default function Home() {
         <nav className="main-nav" aria-label="Navegação principal">
           <a className="active" href="#inicio">Visão geral</a><a href="#freio">Freio</a><a href="#gastos">Gastos</a><a href="#cartoes">Cartões</a>
         </nav>
-        <div className="topbar-actions"><div className="profile-switch" aria-label="Escolher painel"><button className={activeProfile === 'sara' ? 'active' : ''} onClick={() => switchProfile('sara')} type="button">Sara</button><span>·</span><button className={activeProfile === 'joao' ? 'active' : ''} onClick={() => switchProfile('joao')} type="button">João</button></div><button className="primary-button" type="button" onClick={openNew}><span aria-hidden="true">＋</span> Adicionar gasto</button></div>
+        <div className="topbar-actions"><div className="profile-switch" aria-label="Escolher painel"><button className={activeProfile === 'sara' ? 'active' : ''} onClick={() => switchProfile('sara')} type="button">Sara</button><span>·</span><button className={activeProfile === 'joao' ? 'active' : ''} onClick={() => switchProfile('joao')} type="button">João</button></div><button className="primary-button" type="button" onClick={openNew}><span aria-hidden="true">＋</span> Adicionar gasto</button><button className="signout-button" type="button" onClick={() => void supabase.auth.signOut()} title="Sair">Sair</button></div>
       </header>
 
       <section className="page-heading" id="inicio">
@@ -747,4 +782,40 @@ function EntryForm({ entry, selectedMonth, onSubmit, saving, cardName }: { entry
     <div className="check-row"><label><input name="recurring" type="checkbox" defaultChecked={entry?.recurring ?? source === 'fixed'} /><span><b>Repetir todos os meses</b><small>Ideal para contas fixas e renda</small></span></label><label><input name="paid" type="checkbox" defaultChecked={entry?.paid ?? true} /><span><b>{type === 'income' ? 'Já recebido' : 'Já pago'}</b><small>Inclui no valor realizado</small></span></label></div>
     <button className="submit-button" disabled={saving} type="submit">{saving ? 'Salvando…' : entry ? 'Salvar alterações' : 'Adicionar lançamento'}</button>
   </form>;
+}
+
+function SignIn() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) setError('E-mail ou senha incorretos.');
+    setBusy(false);
+  };
+
+  return (
+    <main className="app-shell auth-shell">
+      <form className="auth-card" onSubmit={submit}>
+        <span className="brand-mark">C</span>
+        <h1>clara</h1>
+        <p>Entre para ver as contas de João e Sara.</p>
+        <label className="field full">
+          <span>E-mail</span>
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
+        </label>
+        <label className="field full">
+          <span>Senha</span>
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
+        </label>
+        {error && <p className="auth-error">{error}</p>}
+        <button className="primary-button" type="submit" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
+      </form>
+    </main>
+  );
 }

@@ -44,7 +44,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CARD_LIMITS: Record<string, { limit: number; due: number; closing: number; color: string }> = {
-  'Nubank João': { limit: 0, due: 7, closing: 31, color: '#820ad1' },
+  'Nubank João': { limit: 735000, due: 8, closing: 30, color: '#820ad1' },
   'Nubank Sara': { limit: 830000, due: 12, closing: 5, color: '#6120a8' },
 };
 
@@ -75,7 +75,7 @@ const SAMPLE_ENTRIES: EntrySeed[] = [
   { description: 'Limpeza das calçadas', amountCents: 10000, type: 'expense', category: 'Moradia', source: 'fixed', cardName: null, transactionDate: '2026-09-10', recurring: true, paid: false },
   { description: 'Frajola (custos)', amountCents: 11000, type: 'expense', category: 'Pets', source: 'fixed', cardName: null, transactionDate: '2026-09-10', recurring: true, paid: false },
 
-  // Fatura Nubank — vencimento 07/09/2026
+  // Fatura Nubank — vencimento 08/09/2026
   { description: 'Supermercados de Angel', amountCents: 1497, type: 'expense', category: 'Mercado', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-26', billingMonth: '2026-09', recurring: false, paid: false },
   { description: 'Posto Sofia', amountCents: 3400, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-25', billingMonth: '2026-09', recurring: false, paid: false },
   { description: 'Google One', amountCents: 999, type: 'expense', category: 'Assinaturas', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-25', billingMonth: '2026-09', recurring: false, paid: false },
@@ -124,6 +124,13 @@ const SAMPLE_ENTRIES: EntrySeed[] = [
   { description: 'Tiktok Shop - Parcela 2/3', amountCents: 4600, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank João', transactionDate: '2026-07-31', billingMonth: '2026-09', recurring: false, paid: false },
   { description: 'Mercado Livre - Parcela 10/12', amountCents: 1094, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank João', transactionDate: '2026-07-31', billingMonth: '2026-09', recurring: false, paid: false },
   { description: 'Mercado Pago - Parcela 2/2', amountCents: 2995, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank João', transactionDate: '2026-07-31', billingMonth: '2026-09', recurring: false, paid: false },
+
+  // Complemento fatura Nubank - PDF atualizado em 02/09/2026
+  { description: 'Gela Boca Bc', amountCents: 1024, type: 'expense', category: 'Restaurantes', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-27', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Supermercados Koch', amountCents: 999, type: 'expense', category: 'Mercado', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-27', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'iFood - Jean Carlos Manari', amountCents: 999, type: 'expense', category: 'Restaurantes', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-28', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Supermercados Imperatriz', amountCents: 499, type: 'expense', category: 'Mercado', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-29', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Stringari Brava', amountCents: 1376, type: 'expense', category: 'Mercado', source: 'card', cardName: 'Nubank João', transactionDate: '2026-08-30', billingMonth: '2026-09', recurring: false, paid: false },
 ];
 
 const SARA_ENTRIES: EntrySeed[] = [
@@ -299,6 +306,36 @@ const SARA_ENTRIES: EntrySeed[] = [
   { description: 'Shopee - Belatextil - Parcela 2/4', amountCents: 1384, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-05', billingMonth: '2026-09', recurring: false, paid: false },
   { description: 'Uber', amountCents: 727, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-05', billingMonth: '2026-09', recurring: false, paid: false },
   { description: 'Shopee - Heconfeccoes - Parcela 2/4', amountCents: 2584, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-05', billingMonth: '2026-09', recurring: false, paid: false },
+
+  // Complemento fatura setembro - CSVs atualizados em 02/09/2026
+  { description: 'Burger King', amountCents: 890, type: 'expense', category: 'Restaurantes', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-04', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Casas Bahia - Parcela 2/3', amountCents: 5570, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-04', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 752, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-04', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Brisa Restaurante', amountCents: 2857, type: 'expense', category: 'Restaurantes', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-05', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Milium Loja', amountCents: 6470, type: 'expense', category: 'Compras', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-05', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 564, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-11', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 784, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-14', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 705, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-15', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 800, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-18', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Apple', amountCents: 3243, type: 'expense', category: 'Assinaturas', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-22', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 1240, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-23', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 855, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-23', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 564, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-25', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 728, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-27', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Supermercados Koch', amountCents: 1587, type: 'expense', category: 'Mercado', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-27', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 822, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-28', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 866, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-28', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Cremelie', amountCents: 1600, type: 'expense', category: 'Restaurantes', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-29', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 807, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-29', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 762, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-29', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Brasil Atacadista', amountCents: 4298, type: 'expense', category: 'Mercado', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-30', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Matriz Padaria', amountCents: 2705, type: 'expense', category: 'Restaurantes', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-31', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 1471, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-08-31', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 842, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-09-01', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 892, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-09-02', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 1327, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-09-02', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 1512, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-09-02', billingMonth: '2026-09', recurring: false, paid: false },
+  { description: 'Uber', amountCents: 846, type: 'expense', category: 'Transporte', source: 'card', cardName: 'Nubank Sara', transactionDate: '2026-09-02', billingMonth: '2026-09', recurring: false, paid: false },
 ];
 
 function makeId() {
@@ -319,6 +356,16 @@ function seedEntries(profile: ProfileKey) {
   return seed.map((entry) => createEntry(entry, profile));
 }
 
+function entryIdentity(entry: Entry) {
+  const billingMonth = entry.billingMonth ?? entry.transactionDate.slice(0, 7);
+  return [entry.profile, billingMonth, entry.transactionDate, entry.amountCents, entry.source].join('|');
+}
+
+function findMissingSeedEntries(profile: ProfileKey, existing: Entry[]) {
+  const seen = new Set(existing.map(entryIdentity));
+  return seedEntries(profile).filter((entry) => !seen.has(entryIdentity(entry)));
+}
+
 async function fetchEntries(profile: ProfileKey): Promise<Entry[]> {
   const { data, error } = await supabase
     .from('entries')
@@ -329,13 +376,12 @@ async function fetchEntries(profile: ProfileKey): Promise<Entry[]> {
   return (data as EntryRow[]).map(rowToEntry);
 }
 
-// Na primeira vez que um perfil abre sem nenhum lançamento no banco,
-// carrega os dados iniciais. Depois disso o banco é a fonte da verdade.
+// Mantém o banco sincronizado com os lançamentos iniciais sem duplicar itens já salvos.
 async function fetchOrSeedEntries(profile: ProfileKey): Promise<Entry[]> {
   const existing = await fetchEntries(profile);
-  if (existing.length) return existing;
-  const seeded = seedEntries(profile);
-  const { error } = await supabase.from('entries').insert(seeded.map(entryToRow));
+  const missingSeeds = findMissingSeedEntries(profile, existing);
+  if (!missingSeeds.length) return existing;
+  const { error } = await supabase.from('entries').insert(missingSeeds.map(entryToRow));
   if (error) throw error;
   return fetchEntries(profile);
 }
@@ -351,7 +397,7 @@ export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [activeProfile, setActiveProfile] = useState<ProfileKey>('joao');
-  const [selectedMonth, setSelectedMonth] = useState('2026-08');
+  const [selectedMonth, setSelectedMonth] = useState(PROFILES.joao.defaultMonth);
   const [chartMode, setChartMode] = useState<ChartMode>('weekly');
   const [filter, setFilter] = useState<Filter>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
